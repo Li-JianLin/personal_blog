@@ -20,8 +20,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'element-plus': ['element-plus'],
-          icons: ['@element-plus/icons-vue'],
+          'element-plus': ['element-plus', '@element-plus/icons-vue'],
           router: ['vue-router'],
           store: ['pinia'],
           markdown: ['marked', 'highlight.js'],

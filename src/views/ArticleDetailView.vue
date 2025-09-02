@@ -302,20 +302,20 @@ const viewArticle = (id: string) => {
 }
 
 const scrollToHeading = (headingId: string) => {
-  if (import.meta.env.DEV) console.log(`Attempting to scroll to heading: ${headingId}`)
-
   // 查找目标标题元素
   const targetElement = document.getElementById(headingId)
   if (!targetElement) {
-    if (import.meta.env.DEV) console.warn(`Target element with id "${headingId}" not found`)
     return
   }
 
-  if (import.meta.env.DEV) console.log(`Found target element, scrolling to: ${headingId}`)
-
   // 计算目标位置，留出一些顶部空间避免被遮挡
+  let offsetPixel = 100 // 默认桌面端顶部偏移
+  if (isMobileOrTablet.value) {
+    // 移动端滚动时顶部偏移更大
+    offsetPixel = 130
+  }
   const elementTop = targetElement.offsetTop
-  const offsetPosition = elementTop - 50 // 留出 50px 的空间
+  const offsetPosition = elementTop - offsetPixel
 
   // 平滑滚动到计算出的位置
   window.scrollTo({

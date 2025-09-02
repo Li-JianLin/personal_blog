@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import avatarImg from '@/assets/avatar.jpg'
 
 // 定义技能接口
 export interface Skill {
@@ -17,7 +18,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     phone: '183-8486-8452',
     location: '湖南 长沙',
     github: 'https://github.com/Li-JianLin',
-    avatar: '/src/assets/avatar.jpg',
+    avatar: avatarImg,
     introduction: `
       我是中南大学2026届应届毕业生，专注于前端开发技术。
       虽然不是计算机科班出身，但我通过自学掌握了现代Web开发技术栈，
@@ -71,6 +72,8 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     { name: 'Vite', level: 75, category: 'tools' },
     { name: 'Git', level: 80, category: 'tools' },
     { name: 'Webpack', level: 70, category: 'tools' },
+    { name: 'Python', level: 85, category: 'backend' },
+    { name: 'Python', level: 90, category: 'backend' },
     { name: 'Node.js', level: 60, category: 'backend' },
     { name: 'Express', level: 55, category: 'backend' },
   ])
