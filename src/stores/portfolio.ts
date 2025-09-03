@@ -20,10 +20,11 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     github: 'https://github.com/Li-JianLin',
     avatar: avatarImg,
     introduction: `
-      我是中南大学2026届应届毕业生，专注于前端开发技术。
+      我是中南大学2026届应届毕业生，热爱前端开发技术。
       虽然不是计算机科班出身，但我通过自学掌握了现代Web开发技术栈，
-      包括Vue3、TypeScript、前端工程化等。我热爱编程，注重代码质量，
-      充满探索技术的热情，希望能够在前端开发领域发光发热。
+      包括Vue3、TypeScript、前端工程化等。
+      我热爱编程，充满探索技术的热情，
+      希望能在前端开发领域发光发热。
     `,
   }
 
@@ -73,7 +74,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     { name: 'Git', level: 80, category: 'tools' },
     { name: 'Webpack', level: 70, category: 'tools' },
     { name: 'Python', level: 85, category: 'backend' },
-    { name: 'Python', level: 90, category: 'backend' },
+    { name: 'SQL', level: 70, category: 'backend' },
     { name: 'Node.js', level: 60, category: 'backend' },
     { name: 'Express', level: 55, category: 'backend' },
   ])

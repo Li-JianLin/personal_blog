@@ -71,6 +71,7 @@ defineProps(['title', 'description'])
 /* 移动端优化 (<768px) */
 @media (max-width: 767px) {
   .page-header {
+    margin-top: 24px;
     margin-bottom: 24px;
   }
   .page-title {

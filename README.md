@@ -134,8 +134,7 @@ npm run format
 ### 项目展示
 
 - 项目状态和技术栈筛选
-- 项目统计数据展示
-- 在线演示和源码链接
+- 项目思路展示
 - 技术栈可视化
 
 ### 关于页面
@@ -177,8 +176,7 @@ MIT License
 
 如果你对这个项目有任何问题或建议，欢迎联系我：
 
-- 邮箱: your.email@example.com
-- GitHub: [your-username](https://github.com/your-username)
+- 邮箱: lijianlin@csu.edu.cn
 
 ---
 
