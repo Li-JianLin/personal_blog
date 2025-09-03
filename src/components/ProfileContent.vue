@@ -25,7 +25,7 @@
       </div>
     </div>
     <div class="profile-avatar">
-      <el-avatar :size="200" :src="personalInfo.avatar" />
+      <el-avatar :size="200" :src="personalInfo.avatar" alt="个人头像" />
     </div>
   </div>
 </template>
