@@ -281,7 +281,7 @@ onMounted(() => {
 /* 个人介绍区域 */
 .hero-section {
   /* 背景图片设置 */
-  background: url('/src/assets/hero-bg.jpg') no-repeat fixed;
+  background: url('/src/assets/hero-bg.webp') no-repeat fixed;
   background-size: cover;
   background-position: center center;
 
