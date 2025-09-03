@@ -20,7 +20,7 @@ const router = createRouter({
     },
     {
       path: '/knowledge/:id',
-      name: 'article-detail',
+      name: 'articleDetail',
       component: () => import('../views/ArticleDetailView.vue'),
     },
     {
@@ -30,7 +30,7 @@ const router = createRouter({
     },
     {
       path: '/projects/:id',
-      name: 'projects-detail',
+      name: 'projectsDetail',
       component: () => import('../views/ArticleDetailView.vue'),
     },
     {

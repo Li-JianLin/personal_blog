@@ -193,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Clock, Share, Top, Back } from '@element-plus/icons-vue'
@@ -253,23 +253,52 @@ const headings = computed(() => {
   if (!article.value?.content) return []
 
   const content = article.value.content
+  // 代码块移除逻辑
+  const removeCodeBlocks = (text: string) => {
+    // 1. 移除三个反引号的代码块（包括语言标识）
+    let result = text.replace(/```[\w]*\s*[\s\S]*?```/g, '\n[CODE_BLOCK_REMOVED]\n')
+    // 2. 移除单个反引号的行内代码
+    result = result.replace(/`[^`\n]*`/g, '[INLINE_CODE]')
+    // 3. 移除缩进代码块（4个空格或1个tab开头的行）
+    result = result.replace(/^( {4}|\t).*$/gm, '[INDENTED_CODE]')
+    // 4. 移除HTML代码块标签
+    result = result.replace(/<pre[\s\S]*?<\/pre>/gi, '\n[HTML_CODE_BLOCK]\n')
+    result = result.replace(/<code[\s\S]*?<\/code>/gi, '[HTML_INLINE_CODE]')
+
+    return result
+  }
+
+  // 处理后的内容，移除所有代码块
+  const contentWithoutCode = removeCodeBlocks(content)
   const headingRegex = /^(#{1,6})\s+(.*)$/gm
   const headings = []
   let match
   let index = 0
 
-  while ((match = headingRegex.exec(content)) !== null) {
+  // 重置正则表达式的lastIndex
+  headingRegex.lastIndex = 0
+  while ((match = headingRegex.exec(contentWithoutCode)) !== null) {
     const headingText = match[2].trim()
-    // 生成更稳定的 ID，基于文本内容
-    const headingId = `heading-${index}`
-    headings.push({
-      id: headingId,
-      level: match[1].length,
-      text: headingText,
-    })
-    index++
+    console.log(`找到标题: ${match[1]} ${headingText}`)
+    // 过滤掉空标题、只包含特殊字符的标题，以及代码块标记
+    if (
+      headingText &&
+      headingText.length > 0 &&
+      !headingText.includes('[CODE_BLOCK_REMOVED]') &&
+      !headingText.includes('[INLINE_CODE]') &&
+      !headingText.includes('[INDENTED_CODE]') &&
+      !headingText.includes('[HTML_CODE_BLOCK]') &&
+      !headingText.includes('[HTML_INLINE_CODE]')
+    ) {
+      const headingId = `heading-${index}`
+      headings.push({
+        id: headingId,
+        level: match[1].length,
+        text: headingText,
+      })
+      index++
+    }
   }
-
   return headings
 })
 
@@ -298,6 +327,18 @@ const shareArticle = () => {
 }
 
 const viewArticle = (id: string) => {
+  // 验证 ID 是否有效
+  if (!id || id.trim() === '') {
+    ElMessage.error('文章ID无效')
+    return
+  }
+
+  // 如果是当前文章，不进行跳转
+  if (id === route.params.id) {
+    return
+  }
+
+  // 跳转到新文章
   router.push(`/knowledge/${id}`)
 }
 
@@ -387,9 +428,6 @@ const updateCurrentHeading = () => {
   // 更新当前标题
   if (currentHeading.value !== activeHeading) {
     currentHeading.value = activeHeading
-    if (import.meta.env.DEV && activeHeading) {
-      console.log(`Current heading: ${activeHeading}`)
-    }
   }
 }
 
@@ -399,8 +437,16 @@ const loadArticle = async () => {
     loading.value = true
     const art_id = route.params.id as string
 
+    if (!art_id) {
+      throw new Error('文章ID不存在')
+    }
+
     // 使用优化版本的存储过程获取文章详情
     const result = await supabaseService.getArticleDetailOptimized(art_id)
+    if (!result.article) {
+      throw new Error('文章不存在')
+    }
+
     article.value = result.article
     articleImages.value = result.images
     relatedArticles.value = result.related_articles
@@ -410,6 +456,7 @@ const loadArticle = async () => {
   } catch (error) {
     console.error('加载文章失败:', error)
     ElMessage.error('文章加载失败')
+    article.value = null
   } finally {
     loading.value = false
   }
@@ -421,6 +468,23 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
   loadArticle()
 })
+
+// 监听路由参数变化，当跳转到新文章时重新加载
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      // 重置状态
+      showToc.value = false
+      showMobileToc.value = false
+      currentHeading.value = ''
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      // 重新加载文章
+      loadArticle()
+    }
+  },
+)
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
@@ -691,30 +755,36 @@ const handleResize = () => {
 /* 文章导航目录 */
 .article-nav {
   width: 250px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.97);
   border-radius: 8px;
   height: fit-content;
-  max-height: calc(100vh - 160px); /* 限制最大高度 */
+  max-height: calc(100vh - 120px); /* 直接设置高度而不是max-height */
   position: fixed; /* 改为固定定位 */
-  top: 80px; /* 距离顶部的距离，避免被头部遮挡 */
+  top: 80px;
   left: 20px; /* 固定在左侧 */
   z-index: 1000; /* 确保在其他内容之上 */
-  overflow-y: auto; /* 目录区域独立滚动 */
+  overflow: hidden; /* 隐藏外层滚动，只在内部滚动 */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* 增强阴影，突出显示 */
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0, 0, 0, 0.05); /* 添加淡边框增强视觉效果 */
 }
 
 .nav-header {
-  padding: 20px 20px 16px 20px;
+  padding: 16px 20px 12px 20px; /* 减少padding */
   border-bottom: 1px solid #ebeef5;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0; /* 防止头部被压缩 */
+  background: #fafafa; /* 区分头部和内容区域 */
 }
 
 .nav-header h3 {
   margin: 0;
   color: #303133;
-  font-size: 1.1rem;
+  font-size: 1rem; /* 稍微减小字体 */
+  font-weight: 600;
 }
 
 .toc-toggle {
@@ -725,6 +795,7 @@ const handleResize = () => {
   padding: 4px;
   border-radius: 4px;
   transition: all 0.3s;
+  font-size: 12px;
 }
 
 .toc-toggle:hover {
@@ -733,12 +804,14 @@ const handleResize = () => {
 }
 
 .nav-list {
-  padding: 16px;
+  padding: 8px 12px 12px 12px; /* 减少padding */
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: calc(100vh - 300px); /* 为目录列表设置最大高度 */
+  gap: 3px; /* 减少间距 */
+  flex: 1; /* 占据剩余空间 */
   overflow-y: auto; /* 目录列表独立滚动 */
+  overflow-x: hidden; /* 隐藏横向滚动 */
+  min-height: 0; /* 允许flex子项收缩 */
 }
 
 /* 自定义目录的滚动条样式  */
@@ -747,26 +820,33 @@ const handleResize = () => {
 }
 
 .nav-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f8f9fa;
   border-radius: 3px;
+  margin: 2px 0; /* 给滚动条留点边距 */
 }
 
 .nav-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #d1d5db;
   border-radius: 3px;
+  transition: background 0.3s;
 }
 
 .nav-list::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #9ca3af;
 }
 
 .nav-item {
-  padding: 4px 12px;
+  padding: 6px 10px; /* 减少padding */
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.3s;
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* 减小字体 */
   color: #606266;
+  line-height: 1.3; /* 减少行高 */
+  word-wrap: break-word; /* 长标题换行 */
+  hyphens: auto; /* 自动断词 */
+  overflow-wrap: break-word; /* 强制换行 */
+  max-width: 100%;
 }
 
 .nav-item:hover {
@@ -777,20 +857,40 @@ const handleResize = () => {
 .nav-item.level-1 {
   font-weight: 600;
   padding-left: 8px;
+  font-size: 0.85rem;
+  color: #303133;
+  margin-top: 2px; /* 一级标题间距 */
 }
 
 .nav-item.level-2 {
   padding-left: 16px;
+  font-size: 0.8rem;
 }
 
 .nav-item.level-3 {
   padding-left: 24px;
+  font-size: 0.75rem;
+  color: #909399;
+}
+
+.nav-item.level-4 {
+  padding-left: 32px;
+  font-size: 0.7rem;
+  color: #c0c4cc;
+}
+
+.nav-item.level-5,
+.nav-item.level-6 {
+  padding-left: 40px;
+  font-size: 0.7rem;
+  color: #c0c4cc;
 }
 
 .nav-item.active {
   background: #409eff;
   color: white;
   font-weight: 600;
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
 }
 
 .nav-item.active:hover {
